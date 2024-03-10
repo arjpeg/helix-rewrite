@@ -36,13 +36,20 @@ impl<'a> Cursor<'a> {
         char
     }
 
-    pub fn advance_while(&mut self, predicate: impl Fn(char) -> bool) {
-        while let Some(char) = self.advance() {
+    /// Advances the cursor while the predicate returns true for the peeked
+    /// character. Returns the number of times the cursor was advanced.
+    pub fn advance_while(&mut self, predicate: impl Fn(char) -> bool) -> usize {
+        let mut count = 0;
+
+        while let Some(char) = self.peek() {
             if !predicate(char) {
                 break;
             }
 
             self.advance();
+            count += 1;
         }
+
+        count
     }
 }

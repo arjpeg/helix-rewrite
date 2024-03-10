@@ -1,8 +1,10 @@
-use helix::lexer::Lexer;
+use helix::{error::print_error, lexer::Lexer};
 
 fn main() {
-    let lexer = Lexer::new("3");
+    let source = "1.23\n12..30 2.22";
+
+    let lexer = Lexer::new(source, "stdin");
     let tokens = lexer.tokenize();
 
-    dbg!(tokens);
+    print_error(tokens.unwrap_err(), source);
 }

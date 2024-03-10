@@ -8,7 +8,9 @@ pub struct Span {
 
     pub file: &'static str,
 }
+
 impl Span {
+    /// Offset this span by some size
     pub fn offset(&self, by: isize) -> Self {
         Self {
             start: self.start.saturating_add_signed(by),

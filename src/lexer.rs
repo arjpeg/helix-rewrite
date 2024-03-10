@@ -1,3 +1,5 @@
+use std::str::Chars;
+
 use crate::{
     cursor::Cursor,
     error::LexerError,
@@ -9,8 +11,7 @@ use anyhow::{bail, Result};
 /// Takes in a stream of characters and transforms it into
 /// a sequence of `Token`s, which can be used for parsing
 pub struct Lexer<'a> {
-    cursor: Cursor<'a>,
-
+    cursor: Cursor<Chars<'a>>,
     input: &'a str,
     file: &'static str,
 }
@@ -18,23 +19,10 @@ pub struct Lexer<'a> {
 impl<'a> Lexer<'a> {
     pub fn new(input: &'a str, file: &'static str) -> Self {
         Self {
-            cursor: Cursor::new(input),
+            cursor: Cursor::new(input.chars()),
             input,
             file,
         }
-    }
-
-    pub fn tokenize(mut self) -> Result<Vec<Token>> {
-        let mut tokens = Vec::new();
-
-        while let Some(token) = self.next_token() {
-            tokens.push(token?);
-        }
-
-        Ok(tokens
-            .into_iter()
-            .filter(|token| token.kind != TokenKind::Whitespace)
-            .collect())
     }
 
     fn next_token(&mut self) -> Option<Result<Token>> {
@@ -65,7 +53,7 @@ impl<'a> Lexer<'a> {
         self.cursor.advance_while(|c| c.is_ascii_digit());
 
         if let Some('.') = self.cursor.peek() {
-            let decimal_places = self.cursor.advance_while(|c| c == '.');
+            let decimal_places = self.cursor.advance_while(|c| *c == '.');
 
             self.cursor.advance_while(|c| c.is_ascii_digit());
 
@@ -86,5 +74,20 @@ impl<'a> Lexer<'a> {
         let end = self.cursor.position();
 
         Ok(TokenKind::Integer(self.input[start..end].parse().unwrap()))
+    }
+}
+
+impl Iterator for Lexer<'_> {
+    type Item = Result<Token>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // Ignore whitespace tokens
+        match self.next_token()? {
+            Ok(Token {
+                kind: TokenKind::Whitespace,
+                ..
+            }) => self.next(),
+            token => Some(token),
+        }
     }
 }

@@ -1,15 +1,18 @@
-use std::{iter::Peekable, str::Chars};
+use std::iter::Peekable;
 
-pub struct Cursor<'a> {
-    chars: Peekable<Chars<'a>>,
+pub struct Cursor<T>
+where
+    T: Iterator,
+{
+    iter: Peekable<T>,
     position: usize,
-    current: Option<char>,
+    current: Option<T::Item>,
 }
 
-impl<'a> Cursor<'a> {
-    pub fn new(input: &'a str) -> Self {
+impl<T: Iterator> Cursor<T> {
+    pub fn new(iterator: T) -> Self {
         Self {
-            chars: input.chars().peekable(),
+            iter: iterator.peekable(),
             position: 0,
             current: None,
         }
@@ -19,27 +22,23 @@ impl<'a> Cursor<'a> {
         self.position
     }
 
-    pub fn current(&self) -> Option<char> {
-        self.current
+    pub fn current(&self) -> Option<&T::Item> {
+        self.current.as_ref()
     }
 
-    pub fn peek(&mut self) -> Option<char> {
-        self.chars.peek().copied()
+    pub fn peek(&mut self) -> Option<&T::Item> {
+        self.iter.peek()
     }
 
-    pub fn advance(&mut self) -> Option<char> {
-        let char = self.chars.next();
+    pub fn advance(&mut self) -> Option<&T::Item> {
+        self.position += 1;
+        self.current = self.iter.next();
 
-        self.position += char.map(|c| c.len_utf8()).unwrap_or(0);
-        self.current = char;
-
-        char
+        self.current.as_ref()
     }
 
-    /// Advances the cursor while the predicate returns true for the peeked
-    /// character. Returns the number of times the cursor was advanced.
-    pub fn advance_while(&mut self, predicate: impl Fn(char) -> bool) -> usize {
-        let mut count = 0;
+    pub fn advance_while(&mut self, predicate: impl Fn(&T::Item) -> bool) -> usize {
+        let start = self.position;
 
         while let Some(char) = self.peek() {
             if !predicate(char) {
@@ -47,9 +46,8 @@ impl<'a> Cursor<'a> {
             }
 
             self.advance();
-            count += 1;
         }
 
-        count
+        self.position - start
     }
 }

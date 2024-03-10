@@ -12,7 +12,7 @@ pub enum LexerError {
     InvalidNumberLiteral(Span, String),
 }
 
-pub fn print_error(error: Error, source: &'static str) {
+pub fn print_error(error: &Error, source: &'static str) {
     let span = match error.downcast_ref::<LexerError>() {
         Some(error) => match error {
             LexerError::InvalidSymbol(span, _) => span,
